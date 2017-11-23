@@ -87,9 +87,9 @@ for (i in 2:n.rep) {
   ## proposal...
   th[1,i] <- th[1,i-1]
   ## comment out next line for no time trend...
-  th[2,i] <- th[2,i-1]+rt(1,df=2)*5.2
-  th[3,i] <- th[3,i-1]+rt(1,df=5)*2
-  th[4,i] <- th[4,i-1]
+  th[2,i] <- th[2,i-1]
+  th[3,i] <- th[3,i-1]
+  th[4,i] <- th[4,i-1]+rnorm(1)*0.3
   th[5,i] <- th[5,i-1]
   th[6,i] <- th[6,i-1]
   
@@ -145,36 +145,36 @@ for (i in 2:n.rep) {
                      signif(inter[2],4),")",sep="")),
          xlab=paste("theta_",2,sep=""))
     
-    screen(2)
-    plot(th[3,1:i],type="l",
-         ylab=(paste("theta_",3,sep="")))
-
-    screen(4)
-    plot(avetheta3[1:i],type="l",
-         ylab=(paste("average_theta_",3,sep="")))
-
-    screen(6)
-    inter = quantile(th[3,1:i],c(0.025,0.975))
-    hist(th[3,1:i],
-         main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-                     signif(inter[2],4),")",sep="")),
-         xlab=paste("theta_",3,sep=""))
-
-    
     # screen(2)
-    # plot(th[4,1:i],type="l",
-    #      ylab=(paste("theta_",4,sep="")))
+    # plot(th[3,1:i],type="l",
+    #      ylab=(paste("theta_",3,sep="")))
     # 
-    # screen(4)     
-    # plot(avetheta4[1:i],type="l",
-    #      ylab=(paste("average_theta_",4,sep="")))
+    # screen(4)
+    # plot(avetheta3[1:i],type="l",
+    #      ylab=(paste("average_theta_",3,sep="")))
     # 
-    # screen(6)  
-    # inter = quantile(th[4,1:i],c(0.025,0.975))
-    # hist(th[4,1:i],
+    # screen(6)
+    # inter = quantile(th[3,1:i],c(0.025,0.975))
+    # hist(th[3,1:i],
     #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
     #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",4,sep=""))
+    #      xlab=paste("theta_",3,sep=""))
+
+
+    screen(2)
+    plot(th[4,1:i],type="l",
+         ylab=(paste("theta_",4,sep="")))
+
+    screen(4)
+    plot(avetheta4[1:i],type="l",
+         ylab=(paste("average_theta_",4,sep="")))
+
+    screen(6)
+    inter = quantile(th[4,1:i],c(0.025,0.975))
+    hist(th[4,1:i],
+         main=(paste("Credible Int. = (",signif(inter[1],4),", ",
+                     signif(inter[2],4),")",sep="")),
+         xlab=paste("theta_",4,sep=""))
   }
 }
 
