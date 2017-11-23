@@ -48,6 +48,7 @@ pri <- function(theta)
 #read in data
 
 trial <- read.csv("C:/Users/Alice Smiddy/Documents/Bath/Applied Statistical inference/coursework/CW18.csv")
+trial <-trial[trial$bio1==0,]
 
 #explatory analysis
 
@@ -63,39 +64,50 @@ with(trial, hist(r, breaks=15))
 
 #metropolis hastings
 
-theta=c(0,100,50,0.5,3,10)
-plotting <- 1 ## Which theta[i] to plot
-n.rep <- 100000
+theta=c(4.63,115,75,2.9,3.7,12)
+n.rep <- 1000000
+#The burn in might change for each variable in theta. Look at this later
 #n.burnin <- 5000
 close.screen(all = TRUE)
 split.screen(c(3,1))
 
-y <- 1:60
+
 ll0 <- ll(theta,trial["r"],trial["d"],trial["bio1"])+pri(theta)
 all.alpha <- rep(0,n.rep)
 all.accept <- rep(0,n.rep)
+avetheta1 <- rep(0,n.rep)
+avetheta2 <- rep(0,n.rep)
+avetheta3 <- rep(0,n.rep)
+avetheta4 <- rep(0,n.rep)
+avetheta5 <- rep(0,n.rep)
+avetheta6 <- rep(0,n.rep)
 th <- matrix(0,6,n.rep)
 th[,1] <- theta
 for (i in 2:n.rep) {
   ## proposal...
-  th[1,i] <- th[1,i-1]+rnorm(1,mean=1)
+  th[1,i] <- th[1,i-1]+rt(1,df=10)*5
   ## comment out next line for no time trend...
-  th[2,i] <- th[2,i-1]+rnorm(1)*0.001
-  th[3,i] <- th[3,i-1]+rnorm(1)*0.001
-  th[4,i] <- th[4,i-1]+rnorm(1)*0.1
-  th[5,i] <- th[5,i-1]+rnorm(1)*0.1
-  th[6,i] <- th[6,i-1]+rnorm(1)*0.001
+  th[2,i] <- th[2,i-1]
+  th[3,i] <- th[3,i-1]
+  th[4,i] <- th[4,i-1]
+  th[5,i] <- th[5,i-1]
+  th[6,i] <- th[6,i-1]
   
-  ## get ll proposal
-  ll1 <- ll(th[,i],trial["r"],trial["d"],trial["bio1"])+pri(th[,i])
-  all.alpha[i] <- exp(ll1-ll0)
-  if (runif(1) < exp(ll1-ll0)) { ## accept
-    all.accept[i] <- 1
-    ll0 <- ll1 ## Keep ll0 in sync with th
-  } else { ## reject
+  if(th[4,i]<0){
     th[,i] <- th[,i-1]
-    ll1 <- ll0
-  }
+  } else {
+    ## get ll proposal
+    ll1 <- ll(th[,i],trial["r"],trial["d"],trial["bio1"])+pri(th[,i])
+    all.alpha[i] <- exp(ll1-ll0)
+    avetheta1[i]=(avetheta1[i-1]*(i-1)+th[1,i])/i
+    if (runif(1) < exp(ll1-ll0)) { ## accept
+      all.accept[i] <- 1
+      ll0 <- ll1 ## Keep ll0 in sync with th
+    } else { ## reject
+      th[,i] <- th[,i-1]
+      ll1 <- ll0
+    }
+ }
 
   
   # 
@@ -103,7 +115,7 @@ for (i in 2:n.rep) {
   # #plot the graph to see if you get as expected
   # #So far you've only looked at E0 (I think?). Double check and code up for the rest of theta if correct
   # 
-  if (i %% 2000 == 0) { ## Do some nice plotting...
+  if (i %% 5000 == 0) { ## Do some nice plotting...
   #   op=par(mfrow=c(2,2))
   #   tmp = acf(th[plotting,1:i],plot=FALSE,lag.max=1)
   #   acf(th[plotting,1:i],
@@ -113,8 +125,8 @@ for (i in 2:n.rep) {
   #        xlab="alpha")
 
     screen(1)
-     plot(th[plotting,1:i],type="l",
-         ylab=(paste("theta_",plotting,sep="")))
+     plot(th[1,1:i],type="l",
+         ylab=(paste("theta_",1,sep="")))
      
      # plot(th[2,1:i],type="l",
      #      ylab=(paste("theta_",2,sep="")))
@@ -124,16 +136,19 @@ for (i in 2:n.rep) {
      #                 signif(mean(th[3,1:i]),4)),
      #      ylab=(paste("theta_",3,sep="")))
      screen(2)     
-     plot(th[4,1:i],type="l",
-          ylab=(paste("theta_",4,sep="")))
+     plot(avetheta1[1:i],type="l",
+          ylab=(paste("average_theta_",1,sep="")))
      
      # plot(th[5,1:i],type="l",
      #      main=paste("Mean theta_",5," = ",
      #                 signif(mean(th[5,1:i]),4)),
      #      ylab=(paste("theta_",5,sep="")))
-     screen(3)     
-     plot(th[6,1:i],type="l",
-          ylab=(paste("theta_",6,sep="")))
+     screen(3)  
+     inter = quantile(th[1,1:i],c(0.025,0.975))
+     hist(th[1,1:i],
+          main=(paste("Credible Int. = (",signif(inter[1],4),", ",
+                      signif(inter[2],4),")",sep="")),
+          xlab=paste("theta_",1,sep=""))
   #   inter = quantile(th[plotting,1:i],c(0.025,0.975))
   #   hist(th[plotting,1:i],
   #        main=(paste("Credible Int. = (",signif(inter[1],4),", ",
