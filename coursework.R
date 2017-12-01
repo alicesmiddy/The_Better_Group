@@ -48,7 +48,7 @@ pri <- function(theta)
 #read in data
 
 trial <- read.csv("C:/Users/Alice Smiddy/Documents/Bath/Applied Statistical inference/coursework/CW18.csv")
-trial <-trial[trial$bio1==0,]
+# trial <-trial[trial$bio1==1,]
 
 #explatory analysis
 
@@ -64,7 +64,7 @@ with(trial, hist(r, breaks=15))
 
 #metropolis hastings
 
-theta=c(4.63,114,75,2.9,3.7,12)
+theta=c(4.63,115,75,3,3.66,11.8)
 n.rep <- 1000000
 #The burn in might change for each variable in theta. Look at this later
 #n.burnin <- 5000
@@ -85,13 +85,13 @@ th <- matrix(0,6,n.rep)
 th[,1] <- theta
 for (i in 2:n.rep) {
   ## proposal...
-  th[1,i] <- th[1,i-1]
+  th[1,i] <- th[1,i-1]+rnorm(1,0,1.9)
   ## comment out next line for no time trend...
-  th[2,i] <- th[2,i-1]
-  th[3,i] <- th[3,i-1]
-  th[4,i] <- th[4,i-1]+rnorm(1)*0.3
-  th[5,i] <- th[5,i-1]
-  th[6,i] <- th[6,i-1]
+  th[2,i] <- th[2,i-1]+rnorm(1,0,2.4)
+  th[3,i] <- th[3,i-1]+rnorm(1,0,1.5)
+  th[4,i] <- th[4,i-1]+rnorm(1,0,0.04)
+  th[5,i] <- th[5,i-1]+rnorm(1,0,0.04)
+  th[6,i] <- th[6,i-1]+rnorm(1,0,1.4)
   
   if(th[4,i]<0){
     th[,i] <- th[,i-1]
@@ -103,6 +103,8 @@ for (i in 2:n.rep) {
     avetheta2[i]=(avetheta2[i-1]*(i-1)+th[2,i])/i
     avetheta3[i]=(avetheta3[i-1]*(i-1)+th[3,i])/i
     avetheta4[i]=(avetheta4[i-1]*(i-1)+th[4,i])/i
+    avetheta5[i]=(avetheta5[i-1]*(i-1)+th[5,i])/i
+    avetheta6[i]=(avetheta6[i-1]*(i-1)+th[6,i])/i
     if (runif(1) < exp(ll1-ll0)) { ## accept
       all.accept[i] <- 1
       ll0 <- ll1 ## Keep ll0 in sync with th
@@ -115,9 +117,9 @@ for (i in 2:n.rep) {
   
   if (i %% 5000 == 0) { ## Do some nice plotting...
     
-    # screen(1)
-    #  plot(th[1,1:i],type="l",
-    #      ylab=(paste("theta_",1,sep="")))
+    screen(1)
+     plot(th[1,1:i],type="l",
+         ylab=(paste("theta_",1,sep="")))
     #  
     #  screen(2)     
     #  plot(avetheta1[1:i],type="l",
@@ -130,24 +132,24 @@ for (i in 2:n.rep) {
     #                   signif(inter[2],4),")",sep="")),
     #       xlab=paste("theta_",1,sep=""))
     
-    screen(1)
+    screen(2)
     plot(th[2,1:i],type="l",
          ylab=(paste("theta_",2,sep="")))
     
-    screen(3)     
-    plot(avetheta2[1:i],type="l",
-         ylab=(paste("average_theta_",2,sep="")))
+    # screen(3)     
+    # plot(avetheta2[1:i],type="l",
+    #      ylab=(paste("average_theta_",2,sep="")))
+    # 
+    # screen(5)  
+    # inter = quantile(th[2,1:i],c(0.025,0.975))
+    # hist(th[2,1:i],
+    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
+    #                  signif(inter[2],4),")",sep="")),
+    #      xlab=paste("theta_",2,sep=""))
     
-    screen(5)  
-    inter = quantile(th[2,1:i],c(0.025,0.975))
-    hist(th[2,1:i],
-         main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-                     signif(inter[2],4),")",sep="")),
-         xlab=paste("theta_",2,sep=""))
-    
-    # screen(2)
-    # plot(th[3,1:i],type="l",
-    #      ylab=(paste("theta_",3,sep="")))
+    screen(3)
+    plot(th[3,1:i],type="l",
+         ylab=(paste("theta_",3,sep="")))
     # 
     # screen(4)
     # plot(avetheta3[1:i],type="l",
@@ -161,20 +163,50 @@ for (i in 2:n.rep) {
     #      xlab=paste("theta_",3,sep=""))
 
 
-    screen(2)
+    screen(4)
     plot(th[4,1:i],type="l",
          ylab=(paste("theta_",4,sep="")))
-
-    screen(4)
-    plot(avetheta4[1:i],type="l",
-         ylab=(paste("average_theta_",4,sep="")))
-
+    # 
+    # screen(4)
+    # plot(avetheta4[1:i],type="l",
+    #      ylab=(paste("average_theta_",4,sep="")))
+    # 
+    # screen(6)
+    # inter = quantile(th[4,1:i],c(0.025,0.975))
+    # hist(th[4,1:i],
+    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
+    #                  signif(inter[2],4),")",sep="")),
+    #      xlab=paste("theta_",4,sep=""))
+    
+    screen(5)
+    plot(th[5,1:i],type="l",
+         ylab=(paste("theta_",5,sep="")))
+    # 
+    # screen(4)
+    # plot(avetheta5[1:i],type="l",
+    #      ylab=(paste("average_theta_",5,sep="")))
+    # 
+    # screen(6)
+    # inter = quantile(th[5,1:i],c(0.025,0.975))
+    # hist(th[5,1:i],
+    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
+    #                  signif(inter[2],4),")",sep="")),
+    #      xlab=paste("theta_",5,sep=""))
+    
     screen(6)
-    inter = quantile(th[4,1:i],c(0.025,0.975))
-    hist(th[4,1:i],
-         main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-                     signif(inter[2],4),")",sep="")),
-         xlab=paste("theta_",4,sep=""))
+    plot(th[6,1:i],type="l",
+         ylab=(paste("theta_",6,sep="")))
+    
+    # screen(4)
+    # plot(avetheta6[1:i],type="l",
+    #      ylab=(paste("average_theta_",6,sep="")))
+    # 
+    # screen(6)
+    # inter = quantile(th[6,1:i],c(0.025,0.975))
+    # hist(th[6,1:i],
+    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
+    #                  signif(inter[2],4),")",sep="")),
+    #      xlab=paste("theta_",6,sep=""))
   }
 }
 
