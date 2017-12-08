@@ -3,6 +3,7 @@
 library(corrplot)
 library("truncnorm")
 library("mvtnorm")
+library(nortest)
 
 ll <- function(theta,r,d,x)
 {
@@ -47,6 +48,16 @@ pri <- function(theta)
 }
 
 trial <- read.csv("CW18.csv")
+trial.biomarker<-subset(trial,bio1==1)
+trial.no.biomarker<-subset(trial,bio1==0)
+plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Dose response for population with/without biomarker")
+lines(trial.biomarker$d,trial.biomarker$r,col="red")
+lines(trial.no.biomarker$d,trial.no.biomarker$r,col="blue")
+##I haven't worked out how to make the legend work ¯\(°_o)/¯
+legend(x=0,y=100,legend=c("Response","Biomarker","No Biomarker"),col=c("black","red",blue"))
+hist(trial.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
+hist(trial.no.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
+
 
 theta=c(4.63,115,75,3,3.66,11.8)
 n.rep <- 100000
@@ -104,93 +115,34 @@ for (i in 2:n.rep) {
     screen(1)
      plot(th[1,1:i],type="l",
          ylab=(paste("theta_",1,sep="")))
-    #  
-    #  screen(2)     
-    #  plot(avetheta1[1:i],type="l",
-    #       ylab=(paste("average_theta_",1,sep="")))
-    #  
-    #  screen(3)  
-    #  inter = quantile(th[1,1:i],c(0.025,0.975))
-    #  hist(th[1,1:i],
-    #       main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                   signif(inter[2],4),")",sep="")),
-    #       xlab=paste("theta_",1,sep=""))
+
     
     screen(2)
     plot(th[2,1:i],type="l",
          ylab=(paste("theta_",2,sep="")))
     
-    # screen(3)     
-    # plot(avetheta2[1:i],type="l",
-    #      ylab=(paste("average_theta_",2,sep="")))
-    # 
-    # screen(5)  
-    # inter = quantile(th[2,1:i],c(0.025,0.975))
-    # hist(th[2,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",2,sep=""))
+
     
     screen(3)
     plot(th[3,1:i],type="l",
          ylab=(paste("theta_",3,sep="")))
-    # 
-    # screen(4)
-    # plot(avetheta3[1:i],type="l",
-    #      ylab=(paste("average_theta_",3,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[3,1:i],c(0.025,0.975))
-    # hist(th[3,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",3,sep=""))
 
 
     screen(4)
     plot(th[4,1:i],type="l",
          ylab=(paste("theta_",4,sep="")))
-    # 
-    # screen(4)
-    # plot(avetheta4[1:i],type="l",
-    #      ylab=(paste("average_theta_",4,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[4,1:i],c(0.025,0.975))
-    # hist(th[4,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",4,sep=""))
+
     
     screen(5)
     plot(th[5,1:i],type="l",
          ylab=(paste("theta_",5,sep="")))
-    # 
-    # screen(4)
-    # plot(avetheta5[1:i],type="l",
-    #      ylab=(paste("average_theta_",5,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[5,1:i],c(0.025,0.975))
-    # hist(th[5,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",5,sep=""))
+
     
     screen(6)
     plot(th[6,1:i],type="l",
          ylab=(paste("theta_",6,sep="")))
     
-    # screen(4)
-    # plot(avetheta6[1:i],type="l",
-    #      ylab=(paste("average_theta_",6,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[6,1:i],c(0.025,0.975))
-    # hist(th[6,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",6,sep=""))
+ 
   }
 }
 mean(all.accept)
@@ -262,94 +214,34 @@ for(i in 2:n.rep) {
     screen(1)
      plot(th.cor[1,1:i],type="l",
          ylab=(paste("theta_",1,sep="")))
-    #  
-    #  screen(2)     
-    #  plot(avetheta1[1:i],type="l",
-    #       ylab=(paste("average_theta_",1,sep="")))
-    #  
-    #  screen(3)  
-    #  inter = quantile(th[1,1:i],c(0.025,0.975))
-    #  hist(th[1,1:i],
-    #       main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                   signif(inter[2],4),")",sep="")),
-    #       xlab=paste("theta_",1,sep=""))
+
     
     screen(2)
     plot(th.cor[2,1:i],type="l",
          ylab=(paste("theta_",2,sep="")))
     
-    # screen(3)     
-    # plot(avetheta2[1:i],type="l",
-    #      ylab=(paste("average_theta_",2,sep="")))
-    # 
-    # screen(5)  
-    # inter = quantile(th[2,1:i],c(0.025,0.975))
-    # hist(th[2,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",2,sep=""))
+
     
     screen(3)
     plot(th.cor[3,1:i],type="l",
          ylab=(paste("theta_",3,sep="")))
-    # 
-    # screen(4)
-    # plot(avetheta3[1:i],type="l",
-    #      ylab=(paste("average_theta_",3,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[3,1:i],c(0.025,0.975))
-    # hist(th[3,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",3,sep=""))
+
 
 
     screen(4)
     plot(th.cor[4,1:i],type="l",
          ylab=(paste("theta_",4,sep="")))
-    # 
-    # screen(4)
-    # plot(avetheta4[1:i],type="l",
-    #      ylab=(paste("average_theta_",4,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[4,1:i],c(0.025,0.975))
-    # hist(th[4,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",4,sep=""))
+
     
     screen(5)
     plot(th.cor[5,1:i],type="l",
          ylab=(paste("theta_",5,sep="")))
-    # 
-    # screen(4)
-    # plot(avetheta5[1:i],type="l",
-    #      ylab=(paste("average_theta_",5,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[5,1:i],c(0.025,0.975))
-    # hist(th[5,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",5,sep=""))
-    
+       
     screen(6)
     plot(th.cor[6,1:i],type="l",
          ylab=(paste("theta_",6,sep="")))
     
-    # screen(4)
-    # plot(avetheta6[1:i],type="l",
-    #      ylab=(paste("average_theta_",6,sep="")))
-    # 
-    # screen(6)
-    # inter = quantile(th[6,1:i],c(0.025,0.975))
-    # hist(th[6,1:i],
-    #      main=(paste("Credible Int. = (",signif(inter[1],4),", ",
-    #                  signif(inter[2],4),")",sep="")),
-    #      xlab=paste("theta_",6,sep=""))
-  }
+     }
 
 }
 mean(all.accept)
@@ -525,3 +417,102 @@ D.cor.bar=D.cor.bar+ (-2)*ll(th.cor[,i],trial["r"],trial["d"],trial["bio1"])
 }
 D.cor.bar=D.cor.bar/K.cor
 DIC.th.cor<-2*D.cor.bar-D.th.cor.bar
+
+#Comparing the DIC for each model
+DIC.th
+DIC.th.cor
+
+#We keep the model that includes the correlation between parameters
+#Now, we calculate Credible Intervals for each parameter
+
+#CI for E0
+quantile(th.cor[1,],c(0.025,0.975))
+
+#CI for Emax
+quantile(th.cor[2,],c(0.025,0.975))
+
+#CI for ED50
+quantile(th.cor[3,],c(0.025,0.975))
+
+#CI for lambda
+quantile(th.cor[4,],c(0.025,0.975))
+
+#CI for sigma
+quantile(th.cor[5,],c(0.025,0.975))
+
+#CI for Beta
+quantile(th.cor[6,],c(0.025,0.975))
+
+##Testing for normality
+##qqnorm plots may provide visual evidence that the posterior distribution
+#for each parameter is normal
+par(mfrow=c(3,2))
+qqnorm(th.cor[1,])
+qqnorm(th.cor[2,])
+qqnorm(th.cor[3,]) 
+qqnorm(th.cor[4,]) #based on this, lambda might not have a normal posterior distribution
+qqnorm(th.cor[5,])
+qqnorm(th.cor[6,])
+#However, the rest of the parameters MIGHT be normally distributed
+#To confirm my suspicion, perform the Cramer von Mises test. (Install the nortest package)
+#We expect to observe p-values greater than 5%, as the Null Hypothesis states that
+#the data is normally distributed
+cvm.test(th.cor[1,])
+cvm.test(th.cor[2,])
+cvm.test(th.cor[3,])
+cvm.test(th.cor[4,])
+cvm.test(th.cor[5,])
+cvm.test(th.cor[6,])
+#After performing the tests, neither of the parameters turned out to be normally distributed
+#Perhaps this has to do with some behaviour around the tails of the posterior distribution
+
+#Density plots
+plot(density(th.cor[1,]),main="Kernel density for E0")
+plot(density(th.cor[2,]),main="Kernel density for Emax")
+plot(density(th.cor[3,]),main="Kernel density for ED50")
+plot(density(th.cor[4,]),main="Kernel density for lambda")
+plot(density(th.cor[5,]),main="Kernel density for sigma^2")
+plot(density(th.cor[6,]),main="Kernel density for Beta")
+
+##Final parameter estimates
+E0.hat<-mean(th.cor[1,])
+Emax.hat<-mean(th.cor[2,])
+ED50.hat<-mean(th.cor[3,])
+lambda.hat<-median(th.cor[4,])
+sigmasq.hat<-mean(th.cor[5,])
+beta.hat<-mean(th.cor[6,])
+
+#Predicted response
+r.hat<-E0.hat+((trial$d^(lambda.hat))*Emax.hat)/((trial$d^(lambda.hat))+(ED50.hat+beta.hat*trial$bio1)^(lambda.hat))
+r.bio.hat<-E0.hat+((trial.biomarker$d^(lambda.hat))*Emax.hat)/((trial.biomarker$d^(lambda.hat))+(ED50.hat+beta.hat*trial.biomarker$bio1)^(lambda.hat))
+r.no.bio.hat<-E0.hat+((trial.no.biomarker$d^(lambda.hat))*Emax.hat)/((trial.no.biomarker$d^(lambda.hat))+(ED50.hat+beta.hat*trial.no.biomarker$bio1)^(lambda.hat))
+
+#Comparing observed vs Predicted
+plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Predicted Dose Response for population with/without biomarker")
+lines(trial.biomarker$d,r.bio.hat,col="red")
+lines(trial.no.biomarker$d,r.no.bio.hat,col="blue")
+#Again, we should add legends showing which line is which
+#The red line is the predicted response for the population WITH the biomarker
+#The blue line is the predicted response for the population WITHOUT the biomarker
+
+#Residuals
+
+res<-trial$r-r.hat
+par(mfrow=c(1,3))
+plot(res)
+qqnorm(res)
+acf(res)
+#Testing for normal distribution in residuals
+#We expect to observe a p-value greater than 5%
+cvm.test(res)
+res.bio<-trial.biomarker$r-r.bio.hat
+res.no.bio<-trial.no.biomarker$r-r.no.bio.hat
+#Residual scatter plots
+par(mfrow=c(3,1))
+plot(res)
+plot(res.bio)
+plot(res.no.bio)
+
+
+#Calculation of ED30
+ED30<-ED50.hat*(0.3/0.7)^(1/lambda.hat)
