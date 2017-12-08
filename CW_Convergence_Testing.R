@@ -48,10 +48,14 @@ pri <- function(theta)
 }
 
 trial <- read.csv("CW18.csv")
+#Subsetting data, population with/withoutyt biomarker
 trial.biomarker<-subset(trial,bio1==1)
 trial.no.biomarker<-subset(trial,bio1==0)
+##Plot general response to treatment
 plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Dose response for population with/without biomarker")
+#Red line: Response to treatment, population with biomarker
 lines(trial.biomarker$d,trial.biomarker$r,col="red")
+#Blue line: Response to treatment, population without biomarker
 lines(trial.no.biomarker$d,trial.no.biomarker$r,col="blue")
 ##I haven't worked out how to make the legend work ¯\(°_o)/¯
 legend(x=0,y=100,legend=c("Response","Biomarker","No Biomarker"),col=c("black","red",blue"))
