@@ -5,6 +5,12 @@ library("truncnorm")
 library("mvtnorm")
 library(nortest)
 
+##This function calculates the log-likelihood of the treatment response
+#given values of the parameter set, according to the 4-parameter Emax model,
+#with an additional paramater corresponding to the effect of the presence of a 
+#biomarker in a patient
+#The assumption is that the response follows a Normal distribution with  mean
+#given by the Emax model and variance sigmasq
 ll <- function(theta,r,d,x)
 {
   E0 <- theta[1]
@@ -15,16 +21,27 @@ ll <- function(theta,r,d,x)
   beta1 <- theta[6]
   n <- length(r)
   
+#It is important to verify ED50+beta1>0, otherwise (ED50+beta1)^lambda might turn
+#out to be a complex number.
   if((ED50 + beta1) > 0)
   {
+#Emax model
     mu <- E0 + ((d^lambda)*Emax)/((d^lambda)+(ED50+beta1*x)^lambda)
+#Return log-likelihood of n observations from a normal distribution with mean mu
+#and variance sigmasq 
     out <-  (-n/2)*(log(2*pi)+log(sigmasq))-(1/(2*sigmasq))*sum((r-mu)^2)
   } else{
+#If ED50+beta1<0, the log-likelihood is set to be -Inf, i.e., 
+#the likelihood is set to be 0
     out <- -Inf
   }
   return(out)
 }
 
+#This function computes the prior joint distribution of the parameters
+#E0, ED50, Emax, lambda, sigmasq and beta1.
+#The assumption is that these parameters are independent of each other, hence
+#the prior joint distribution is the product of each marginal distribution
 pri <- function(theta)
 {
   E0 <- theta[1]
@@ -32,18 +49,29 @@ pri <- function(theta)
   ED50 <- theta[3]
   lambda <- theta[4]
   sigmasq <- exp(theta[5])
-  beta1 <- theta[6]  
+  beta1 <- theta[6]
   
+  #Prior marginal distributions
+
+  #E0~Normal(0,10)
   E0pri <- dnorm(E0,0,10)
-  Emaxpri <- dnorm(Emax,100,10)  
+  #Emax~Normal(100,10)
+  Emaxpri <- dnorm(Emax,100,10)
+  #Re-scaling ED50. The assumption is that the re-scaled version has a 
+  #Beta distribution with parameters 2.5,5 
   pED50 <- ED50/200
   pED50pri <- dbeta(pED50,2.5,5)
+  #Lambda~Uniform(0.5,3)
   lambdapri <- dunif(lambda,0.5,3)
+  #Sigmasq is a Normal(3,5) conditioned to be GREATER than 0
   sigmasqpri <- dtruncnorm(sigmasq,a=0,mean=3,sd=5)
+  #Beta1~Normal(10,4)
   betapri <- dnorm(beta1,10,4)
   
+  #Assign 0 density mass to the event (ED50 + beta1)<0
   ind <- ((ED50 + beta1)>0)
-  
+  #Assuming the parameters are independent of each other, the joint prior distribution
+  #is the product of the marginal priors
   return(log(E0pri*Emaxpri*pED50pri*lambdapri*sigmasqpri*betapri*ind))
 }
 
@@ -57,13 +85,11 @@ plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Dose response for 
 lines(trial.biomarker$d,trial.biomarker$r,col="red")
 #Blue line: Response to treatment, population without biomarker
 lines(trial.no.biomarker$d,trial.no.biomarker$r,col="blue")
-legend("topleft", legend = c("With biomarker", "Without biomarker"),
-       text.width = strwidth("1,000,000"),
-       col = c("red","blue"), lty= c(1,1))
-hist(trial.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
-hist(trial.no.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
+##I haven't worked out how to make the legend work ¯\(°_o)/¯
+legend(x=0,y=100,legend=c("Response","Biomarker","No Biomarker"),col=c("black","red",blue"))
 
 
+#Initial parameter guess
 theta=c(4.63,115,75,3,3.66,11.8)
 n.rep <- 100000
 #The burn in might change for each variable in theta. Look at this later
@@ -328,7 +354,7 @@ ks.test(th6.ind.A,th6.ind.B)
 #loop, i.e., using the multivariate normal distribution AFTER discarding a certain
 #burn-in period
 #Recall that I named the output of this M-H sampling: th.cor
-#My notation might become a bit cumbersome Â¯\_(?)_/Â¯ Â¯\(Â°_o)/Â¯
+#My notation might become a bit cumbersome ¯\_(?)_/¯ ¯\(°_o)/¯
 
 #ACF Lengths
 th1.cor.ac<-acf(th.cor[1,])[[1]][,,1]
@@ -412,7 +438,7 @@ D.bar=D.bar/K
 DIC.th<-2*D.bar-D.th.bar
 
 ##DIC for the Second M-H Approach
-#Again, sorry for the cumbersome notation Â¯\_(?)_/Â¯ Â¯\(Â°_o)/Â¯
+#Again, sorry for the cumbersome notation ¯\_(?)_/¯ ¯\(°_o)/¯
 th.cor.bar<-rowMeans(th.cor)
 D.th.cor.bar<- (-2)*ll(th.cor.bar,trial["r"],trial["d"],trial["bio1"])
 D.cor.bar<-0
@@ -431,61 +457,61 @@ DIC.th.cor
 #Now, we calculate Credible Intervals for each parameter
 
 #CI for E0
-quantile(th.cor[1,],c(0.025,0.975))
+quantile(th1.cor.ind,c(0.025,0.975))
 
 #CI for Emax
-quantile(th.cor[2,],c(0.025,0.975))
+quantile(th2.cor.ind,c(0.025,0.975))
 
 #CI for ED50
-quantile(th.cor[3,],c(0.025,0.975))
+quantile(th3.cor.ind,c(0.025,0.975))
 
 #CI for lambda
-quantile(th.cor[4,],c(0.025,0.975))
+quantile(th4.cor.ind,c(0.025,0.975))
 
 #CI for sigma
-quantile(th.cor[5,],c(0.025,0.975))
+quantile(th5.cor.ind,c(0.025,0.975))
 
 #CI for Beta
-quantile(th.cor[6,],c(0.025,0.975))
+quantile(th6.cor.ind,c(0.025,0.975))
 
 ##Testing for normality
 ##qqnorm plots may provide visual evidence that the posterior distribution
 #for each parameter is normal
 par(mfrow=c(3,2))
-qqnorm(th.cor[1,])
-qqnorm(th.cor[2,])
-qqnorm(th.cor[3,]) 
-qqnorm(th.cor[4,]) #based on this, lambda might not have a normal posterior distribution
-qqnorm(th.cor[5,])
-qqnorm(th.cor[6,])
+qqnorm(th1.cor.ind,main="E0: Normal Q-Q plot")
+qqnorm(th2.cor.ind,main="Emax: Normal Q-Q plot")
+qqnorm(th3.cor.ind, main="ED50: Normal Q-Q plot") 
+qqnorm(th4.cor.ind, main=expression(lambda~": Normal Q-Q plot")) #based on this, lambda might not have a normal posterior distribution
+qqnorm(th5.cor.ind, main=expression(sigma^2  ~": Normal Q-Q plot"))
+qqnorm(th6.cor.ind, main=expression(beta~": Normal Q-Q plot"))
 #However, the rest of the parameters MIGHT be normally distributed
 #To confirm my suspicion, perform the Cramer von Mises test. (Install the nortest package)
 #We expect to observe p-values greater than 5%, as the Null Hypothesis states that
 #the data is normally distributed
-cvm.test(th.cor[1,])
-cvm.test(th.cor[2,])
-cvm.test(th.cor[3,])
-cvm.test(th.cor[4,])
-cvm.test(th.cor[5,])
-cvm.test(th.cor[6,])
+cvm.test(th1.cor.ind)
+cvm.test(th2.cor.ind)
+cvm.test(th3.cor.ind)
+cvm.test(th4.cor.ind)
+cvm.test(th5.cor.ind)
+cvm.test(th6.cor.ind)
 #After performing the tests, neither of the parameters turned out to be normally distributed
 #Perhaps this has to do with some behaviour around the tails of the posterior distribution
 
 #Density plots
-plot(density(th.cor[1,]),main="Kernel density for E0")
-plot(density(th.cor[2,]),main="Kernel density for Emax")
-plot(density(th.cor[3,]),main="Kernel density for ED50")
-plot(density(th.cor[4,]),main="Kernel density for lambda")
-plot(density(th.cor[5,]),main="Kernel density for sigma^2")
-plot(density(th.cor[6,]),main="Kernel density for Beta")
+plot(density(th1.cor.ind),main="Kernel density for E0")
+plot(density(th2.cor.ind),main="Kernel density for Emax")
+plot(density(th3.cor.ind),main="Kernel density for ED50")
+plot(density(th4.cor.ind),main=expression("Kernel density for"~ lambda))
+plot(density(th5.cor.ind),main=expression("Kernel density for"~ sigma^2))
+plot(density(th6.cor.ind),main=expression("Kernel density for"~beta))
 
 ##Final parameter estimates
-E0.hat<-mean(th.cor[1,])
-Emax.hat<-mean(th.cor[2,])
-ED50.hat<-mean(th.cor[3,])
-lambda.hat<-median(th.cor[4,])
-sigmasq.hat<-mean(th.cor[5,])
-beta.hat<-mean(th.cor[6,])
+E0.hat<-mean(th1.cor.ind)
+Emax.hat<-mean(th2.cor.ind)
+ED50.hat<-mean(th3.cor.ind)
+lambda.hat<-median(th4.cor.ind)
+sigmasq.hat<-mean(th5.cor.ind)
+beta.hat<-mean(th6.cor.ind)
 
 #Predicted response
 r.hat<-E0.hat+((trial$d^(lambda.hat))*Emax.hat)/((trial$d^(lambda.hat))+(ED50.hat+beta.hat*trial$bio1)^(lambda.hat))
