@@ -57,8 +57,9 @@ plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Dose response for 
 lines(trial.biomarker$d,trial.biomarker$r,col="red")
 #Blue line: Response to treatment, population without biomarker
 lines(trial.no.biomarker$d,trial.no.biomarker$r,col="blue")
-##I haven't worked out how to make the legend work ¯\(°_o)/¯
-legend(x=0,y=100,legend=c("Response","Biomarker","No Biomarker"),col=c("black","red",blue"))
+legend("topleft", legend = c("With biomarker", "Without biomarker"),
+       text.width = strwidth("1,000,000"),
+       col = c("red","blue"), lty= c(1,1))
 hist(trial.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
 hist(trial.no.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
 
@@ -327,7 +328,7 @@ ks.test(th6.ind.A,th6.ind.B)
 #loop, i.e., using the multivariate normal distribution AFTER discarding a certain
 #burn-in period
 #Recall that I named the output of this M-H sampling: th.cor
-#My notation might become a bit cumbersome ¯\_(?)_/¯ ¯\(°_o)/¯
+#My notation might become a bit cumbersome Â¯\_(?)_/Â¯ Â¯\(Â°_o)/Â¯
 
 #ACF Lengths
 th1.cor.ac<-acf(th.cor[1,])[[1]][,,1]
@@ -411,7 +412,7 @@ D.bar=D.bar/K
 DIC.th<-2*D.bar-D.th.bar
 
 ##DIC for the Second M-H Approach
-#Again, sorry for the cumbersome notation ¯\_(?)_/¯ ¯\(°_o)/¯
+#Again, sorry for the cumbersome notation Â¯\_(?)_/Â¯ Â¯\(Â°_o)/Â¯
 th.cor.bar<-rowMeans(th.cor)
 D.th.cor.bar<- (-2)*ll(th.cor.bar,trial["r"],trial["d"],trial["bio1"])
 D.cor.bar<-0
