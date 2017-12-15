@@ -4,6 +4,7 @@ library(corrplot)
 library("truncnorm")
 library("mvtnorm")
 library(nortest)
+set.seed(123)
 
 ##This function calculates the log-likelihood of the treatment response
 #given values of the parameter set, according to the 4-parameter Emax model,
