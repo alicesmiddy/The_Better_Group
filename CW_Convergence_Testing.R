@@ -3,6 +3,7 @@
 library(corrplot)
 library("truncnorm")
 library("mvtnorm")
+#This library contains normality tests, we use the Cramer-von Mises test from this package
 library(nortest)
 
 ##This function calculates the log-likelihood of the treatment response
@@ -17,7 +18,7 @@ ll <- function(theta,r,d,x)
   Emax <- theta[2]
   ED50 <- theta[3]
   lambda <- theta[4]
-  sigmasq <- exp(theta[5])
+  sigmasq <- exp(theta[5]) #Make sure the variance always remains non-negative
   beta1 <- theta[6]
   n <- length(r)
   
@@ -38,7 +39,7 @@ ll <- function(theta,r,d,x)
   return(out)
 }
 
-#This function computes the prior joint distribution of the parameters
+#This function computes the log-prior joint distribution of the parameters
 #E0, ED50, Emax, lambda, sigmasq and beta1.
 #The assumption is that these parameters are independent of each other, hence
 #the prior joint distribution is the product of each marginal distribution
@@ -48,7 +49,7 @@ pri <- function(theta)
   Emax <- theta[2]
   ED50 <- theta[3]
   lambda <- theta[4]
-  sigmasq <- exp(theta[5])
+  sigmasq <- exp(theta[5]) #Make sure the variance always remains non-negative
   beta1 <- theta[6]
   
   #Prior marginal distributions
@@ -77,9 +78,10 @@ pri <- function(theta)
 
 set.seed(5)
 trial <- read.csv("CW18.csv")
-#Subsetting data, population with/withoutyt biomarker
+#Subsetting data, population with/without biomarker
 trial.biomarker<-subset(trial,bio1==1)
 trial.no.biomarker<-subset(trial,bio1==0)
+
 ##Plot general response to treatment
 plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Dose response for population with/without biomarker")
 #Red line: Response to treatment, population with biomarker
@@ -89,22 +91,30 @@ lines(trial.no.biomarker$d,trial.no.biomarker$r,col="blue")
 legend("topleft", legend = c("With biomarker", "Without biomarker"),
        text.width = strwidth("1,000,000"),
        col = c("red","blue"), lty= c(1,1))
-hist(trial.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
-hist(trial.no.biomarker$r,freq=FALSE,main="Histogram of response to treatment",xlab="Response")
 
+#Add histograms of the response to treatment, separating the population with
+#and without biomarker
+#The red bars correspond to population with the biomarker, while the blue bars
+#indicate the population without the biomarker
+hist(trial.biomarker$r,col="red",freq=FALSE,main="Histogram of response to treatment",xlab="Response")
+hist(trial.no.biomarker$r,col="blue",add=T,freq=FALSE)
+box()
 
 #Initial parameter guess
 theta=c(4.63,115,75,3,3.66,11.8)
 n.rep <- 100000
-#The burn in might change for each variable in theta. Look at this later
+#Burn-in period set to 5,000
 n.burnin <- 5000
 close.screen(all = TRUE)
 split.screen(c(3,2))
 
-
+#Log-likelihood of the response given the initial guess
 ll0 <- ll(theta,trial["r"],trial["d"],trial["bio1"])+pri(theta)
+#Vectors storing the acceptance probabilities and wether 
+#a proposal was accepted or not
 all.alpha <- rep(0,n.rep)
 all.accept <- rep(0,n.rep)
+#Vectors storing the average of the estimate at each step of the M-H
 avetheta1 <- rep(0,n.rep)
 avetheta2 <- rep(0,n.rep)
 avetheta3 <- rep(0,n.rep)
@@ -114,9 +124,9 @@ avetheta6 <- rep(0,n.rep)
 th <- matrix(0,6,n.rep)
 th[,1] <- theta
 for (i in 2:n.rep) {
-  ## proposal...
+  ## Proposal distributions for each parameter
+  #A normal distribution with different standard deviations are used as proposal distributions
   th[1,i] <- th[1,i-1]+rnorm(1,0,1.9)
-  ## comment out next line for no time trend...
   th[2,i] <- th[2,i-1]+rnorm(1,0,2.4)
   th[3,i] <- th[3,i-1]+rnorm(1,0,1.5)
   th[4,i] <- th[4,i-1]+rnorm(1,0,0.04)
@@ -126,9 +136,11 @@ for (i in 2:n.rep) {
   if(th[4,i]<0){
     th[,i] <- th[,i-1]
   } else {
-    ## get ll proposal
+    ## Log-likelihood of the response given the proposed parameter values
     ll1 <- ll(th[,i],trial["r"],trial["d"],trial["bio1"])+pri(th[,i])
+    #Acceptance probability
     all.alpha[i] <- exp(ll1-ll0)
+    #Update the average up to the new M-H Step
     avetheta1[i]=(avetheta1[i-1]*(i-1)+th[1,i])/i
     avetheta2[i]=(avetheta2[i-1]*(i-1)+th[2,i])/i
     avetheta3[i]=(avetheta3[i-1]*(i-1)+th[3,i])/i
@@ -144,8 +156,8 @@ for (i in 2:n.rep) {
     }
   }
   
-  
-  if (i %% 5000 == 0) { ## Do some nice plotting...
+  #Plot the M-H results every 5K iterates
+  if (i %% 5000 == 0) {
     
     screen(1)
      plot(th[1,1:i],type="l",
@@ -180,13 +192,15 @@ for (i in 2:n.rep) {
  
   }
 }
+#Calculate the acceptance rate
 mean(all.accept)
+#Discard the burn-in period
 th<-th[,-(1:n.burnin)]
 
 ##After running the first version of Metropolis-Hastings
 #Say our parameter matrix AFTER removing the burn-in period is called th
 V<-cor(t(th)) #Correlation matrix of the parameters
-VCOV<-cov(t(th))
+VCOV<-cov(t(th)) #Covariance matrix of the parameters
 corrplot(V,method="circle") #Plot the correlation matrix with a color bar
 #We will see if any of the parameters is correlated
 
@@ -215,22 +229,29 @@ cor.test(th[5,],th[6,],method="pearson")
 # i.e. in each iterate generate th.cor[,i]<-th.cor[,i-1]+rmvnorm(1,sigma=V)*std_dev
 #Of course, the parameter std_dev should be tuned in order to get a ~25% acceptancece
 #
+#Defining the initial parameter values for the next M-H run
 theta=c(4.63,115,75,3,3.66,11.8)
 n.rep <- 100000
-#The burn in might change for each variable in theta. Look at this later
+#We will use the same burn-in period
 n.burnin <- 5000
 close.screen(all = TRUE)
 split.screen(c(3,2))
+#Log-likelihood of the response given the initial parameter values
 ll0 <- ll(theta,trial["r"],trial["d"],trial["bio1"])+pri(theta)
 all.alpha <- rep(0,n.rep)
 all.accept <- rep(0,n.rep)
 th.cor <- matrix(0,6,n.rep)
 th.cor[,1] <- theta
-std_dev<-0.9 
+std_dev<-0.9 #Proposed standard deviation
 for(i in 2:n.rep) {
+	#In this run, our proposal distribution is a multivariate normal
+	#with covariance matrix given by the posterior covariance matrix
+	#from the first M-H run
 	th.cor[,i]<-th.cor[,i-1]+rmvnorm(1,sigma=VCOV)*std_dev
+	#Log likelihood of the response given the proposed parameter values
 	ll1 <- ll(th.cor[,i],trial["r"],trial["d"],trial["bio1"])+pri(th.cor[,i])
-      all.alpha[i] <- exp(ll1-ll0)
+      #Acceptance probability
+	all.alpha[i] <- exp(ll1-ll0)
 	if(th.cor[4,i]<0){
     th.cor[,i] <- th.cor[,i-1]
   } else {
@@ -242,8 +263,8 @@ for(i in 2:n.rep) {
       ll1 <- ll0
     }
 }
-	
-	if (i %% 5000 == 0) { ## Do some nice plotting...
+	#Plot the results of the M-H algortihm every 5K iterations
+	if (i %% 5000 == 0) {
     close.screen(all = TRUE)
 	split.screen(c(3,2))
     screen(1)
@@ -282,9 +303,10 @@ for(i in 2:n.rep) {
 mean(all.accept)
 th.cor<-th.cor[,-(1:n.burnin)]
 #ACF lengths
-#The acf length has to be computed for each paramter in order to draw independent
+#The acf length has to be computed for each parameter in order to draw independent
 #subsamples
 
+#Calculating ACF lengths for the first M-H output
 th1.ac<-acf(th[1,])[[1]][,,1]
 th1.acl<-2*sum(th1.ac)-1
 
@@ -311,12 +333,11 @@ th4.ind<-th[4,][seq(1,length(th[4,]),th4.acl)]
 th5.ind<-th[5,][seq(1,length(th[5,]),th5.acl)]
 th6.ind<-th[6,][seq(1,length(th[6,]),th6.acl)]
 
-#To decide wether each parameter converged or not, perform the two-sample
-#Kolmogorov-Smirnov test by splitting into two each independent subsample of
-#parameters
+#To decide whether each parameter converged or not, perform the two-sample
+#Kolmogorov-Smirnov test by splitting each independent subsample into two
 #We expect to observe a p-value GREATER than 0.05 to conclude that the parameter
 #converged, i.e., each subsample has the same distribution}
-#For simplicity, I'll just split each vector into two halves
+#For simplicity, split each vector into two halves
 
 #Theta1
 H<-length(th1.ind)/2
@@ -357,8 +378,8 @@ ks.test(th6.ind.A,th6.ind.B)
 #We perform the same procedure on the samples from the second Metropolis-Hastings
 #loop, i.e., using the multivariate normal distribution AFTER discarding a certain
 #burn-in period
-#Recall that I named the output of this M-H sampling: th.cor
-#My notation might become a bit cumbersome ¯\_(?)_/¯ ¯\(°_o)/¯
+#Recall that we named the output of this M-H sampling: th.cor
+#My notation might become a bit cumbersome
 
 #ACF Lengths
 th1.cor.ac<-acf(th.cor[1,])[[1]][,,1]
@@ -427,7 +448,7 @@ ks.test(th6.cor.ind.A,th6.cor.ind.B)
 ##ASSUMING both th and th.cor converged nicely, i.e., every parameter converged
 #How do we decide which one is a better model?
 #Calculate the DIC for both estimates. Keep the one with lowest DIC
-#Check Core Statistic 6.3, but it does not explain well how the DIC is obtained
+#Check Core Statistics 6.3
 #Also check slides 54-56 from https://www.ukdataservice.ac.uk/media/307220/presentation4.pdf
 
 ##DIC for the First M-H Approach
@@ -442,7 +463,7 @@ D.bar=D.bar/K
 DIC.th<-2*D.bar-D.th.bar
 
 ##DIC for the Second M-H Approach
-#Again, sorry for the cumbersome notation ¯\_(?)_/¯ ¯\(°_o)/¯
+#Again, sorry for the cumbersome notation 
 th.cor.bar<-rowMeans(th.cor)
 D.th.cor.bar<- (-2)*ll(th.cor.bar,trial["r"],trial["d"],trial["bio1"])
 D.cor.bar<-0
@@ -457,7 +478,8 @@ DIC.th.cor<-2*D.cor.bar-D.th.cor.bar
 DIC.th
 DIC.th.cor
 
-#We keep the model that includes the correlation between parameters
+#We keep the model that includes the correlation between parameters as it has
+#a smaller DIC
 #Now, we calculate Credible Intervals for each parameter
 
 #CI for E0
@@ -478,6 +500,10 @@ quantile(th5.cor.ind,c(0.025,0.975))
 #CI for Beta
 quantile(th6.cor.ind,c(0.025,0.975))
 
+#Credible intervals show that each parameter is signifficantly different than 0
+#This is especially important in the case of Beta, as the presence of the biomarker
+#given a different response to treatment
+
 ##Testing for normality
 ##qqnorm plots may provide visual evidence that the posterior distribution
 #for each parameter is normal
@@ -489,7 +515,7 @@ qqnorm(th4.cor.ind, main=expression(lambda~": Normal Q-Q plot")) #based on this,
 qqnorm(th5.cor.ind, main=expression(sigma^2  ~": Normal Q-Q plot"))
 qqnorm(th6.cor.ind, main=expression(beta~": Normal Q-Q plot"))
 #However, the rest of the parameters MIGHT be normally distributed
-#To confirm my suspicion, perform the Cramer von Mises test. (Install the nortest package)
+#To confirm this suspicion, perform the Cramer von Mises test. 
 #We expect to observe p-values greater than 5%, as the Null Hypothesis states that
 #the data is normally distributed
 cvm.test(th1.cor.ind)
@@ -498,10 +524,9 @@ cvm.test(th3.cor.ind)
 cvm.test(th4.cor.ind)
 cvm.test(th5.cor.ind)
 cvm.test(th6.cor.ind)
-#After performing the tests, neither of the parameters turned out to be normally distributed
-#Perhaps this has to do with some behaviour around the tails of the posterior distribution
+#As expected, all parameters BUT lambda are normally distributed
 
-#Density plots
+#Kernel Density plots
 plot(density(th1.cor.ind),main="Kernel density for E0")
 plot(density(th2.cor.ind),main="Kernel density for Emax")
 plot(density(th3.cor.ind),main="Kernel density for ED50")
@@ -510,6 +535,10 @@ plot(density(th5.cor.ind),main=expression("Kernel density for"~ sigma^2))
 plot(density(th6.cor.ind),main=expression("Kernel density for"~beta))
 
 ##Final parameter estimates
+#As lambda is NOT normally distributed, a sensible approach is to use the median
+#of the independent subsamples as the estimate
+#The remaining parameters are normally distributed, so it makes sense to
+#take the mean of the independent subsamples as as the estimate
 E0.hat<-mean(th1.cor.ind)
 Emax.hat<-mean(th2.cor.ind)
 ED50.hat<-mean(th3.cor.ind)
@@ -517,35 +546,36 @@ lambda.hat<-median(th4.cor.ind)
 sigmasq.hat<-mean(th5.cor.ind)
 beta.hat<-mean(th6.cor.ind)
 
-#Predicted response
+#Predicted response, in the general case and separating the population with
+#and without the biomarker
 r.hat<-E0.hat+((trial$d^(lambda.hat))*Emax.hat)/((trial$d^(lambda.hat))+(ED50.hat+beta.hat*trial$bio1)^(lambda.hat))
 r.bio.hat<-E0.hat+((trial.biomarker$d^(lambda.hat))*Emax.hat)/((trial.biomarker$d^(lambda.hat))+(ED50.hat+beta.hat*trial.biomarker$bio1)^(lambda.hat))
 r.no.bio.hat<-E0.hat+((trial.no.biomarker$d^(lambda.hat))*Emax.hat)/((trial.no.biomarker$d^(lambda.hat))+(ED50.hat+beta.hat*trial.no.biomarker$bio1)^(lambda.hat))
 
 #Comparing observed vs Predicted
+#Scatter plot of the observed responses
 plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Predicted Dose Response for population with/without biomarker")
+#Adding the predicted responses
+#The red line shows the predicted response for the population with the biomarker
 lines(trial.biomarker$d,r.bio.hat,col="red")
+#The blue line shows the predicted response for the population without the biomarker
 lines(trial.no.biomarker$d,r.no.bio.hat,col="blue")
 legend("topleft", legend = c("With biomarker", "Without biomarker"), text.width = strwidth("1,000,000"),col = c("red","blue"), lty= c(1,1), y.intersp = 1)
 
 #Residuals
-
+#The residuals are calculated as the difference between the observed and the
+#predicted response
 res<-trial$r-r.hat
 par(mfrow=c(1,3))
+#Residuals scatter plot
 plot(res)
+#Normal Q-Q plot
 qqnorm(res)
+#Autocorrelation plot
 acf(res)
 #Testing for normal distribution in residuals
 #We expect to observe a p-value greater than 5%
 cvm.test(res)
-res.bio<-trial.biomarker$r-r.bio.hat
-res.no.bio<-trial.no.biomarker$r-r.no.bio.hat
-#Residual scatter plots
-par(mfrow=c(3,1))
-plot(res)
-plot(res.bio)
-plot(res.no.bio)
-
 
 #Calculation of ED30
 ED30<-ED50.hat*(0.3/0.7)^(1/lambda.hat)
