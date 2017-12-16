@@ -75,6 +75,7 @@ pri <- function(theta)
   return(log(E0pri*Emaxpri*pED50pri*lambdapri*sigmasqpri*betapri*ind))
 }
 
+set.seed(5)
 trial <- read.csv("CW18.csv")
 #Subsetting data, population with/withoutyt biomarker
 trial.biomarker<-subset(trial,bio1==1)
@@ -525,9 +526,7 @@ r.no.bio.hat<-E0.hat+((trial.no.biomarker$d^(lambda.hat))*Emax.hat)/((trial.no.b
 plot(trial$d,trial$r,xlab="Dose Amount",ylab="Response",main="Predicted Dose Response for population with/without biomarker")
 lines(trial.biomarker$d,r.bio.hat,col="red")
 lines(trial.no.biomarker$d,r.no.bio.hat,col="blue")
-#Again, we should add legends showing which line is which
-#The red line is the predicted response for the population WITH the biomarker
-#The blue line is the predicted response for the population WITHOUT the biomarker
+legend("topleft", legend = c("With biomarker", "Without biomarker"), text.width = strwidth("1,000,000"),col = c("red","blue"), lty= c(1,1), y.intersp = 1)
 
 #Residuals
 
